@@ -1,0 +1,5 @@
+Datasets/images/
+Datasets/train/
+yolo11n.pt
+yolov8n-pose.pt
+Videos/
