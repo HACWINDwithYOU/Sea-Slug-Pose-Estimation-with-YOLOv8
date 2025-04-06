@@ -2,14 +2,14 @@ flip_idx:
 - 0
 - 1
 - 2
-- 4
 - 3
+- 4
 kpt_shape:
 - 5
 - 2
 names:
   0: sea-slug
-path: E:\PythonBugs\Sea-slug_Detection\Datasets
+path: E:\PythonBugs\SlugPose\Datasets
 test: test/images
 train: train/images
 val: val/images

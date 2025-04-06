@@ -48,7 +48,7 @@ def extract_frames(video_path, output_dir, frame_interval=30, prefix="frame_"):
 
 # 使用示例
 if __name__ == "__main__":
-    video_path = "video1.mp4"  # 替换为你的视频路径
+    video_path = "../Videos/video2.mp4"  # 替换为你的视频路径
     output_dir = "images"
 
     # 每30帧抽1帧，文件名格式为frame_000000.jpg
@@ -56,5 +56,5 @@ if __name__ == "__main__":
         video_path=video_path,
         output_dir=output_dir,
         frame_interval=30,
-        prefix="frame_"  # 必须与CVAT标注的图片名前缀一致
+        prefix="video2_frame_"  # 必须与CVAT标注的图片名前缀一致
     )

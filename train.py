@@ -20,9 +20,9 @@ CONFIG = {
     "label_dir": "labels",
     "split_ratio": [0.7, 0.2, 0.1],
     "model_type": "yolov8n-pose.pt",
-    "epochs": 200,
+    "epochs": 300,
     "imgsz": 640,
-    "batch": 32,
+    "batch": 64,
     "device": "0",
     "workers": 0,  # 避免 dataloader 线程问题
     "seed": 42
@@ -32,6 +32,61 @@ CONFIG = {
 os.makedirs("models", exist_ok=True)
 os.makedirs("results", exist_ok=True)
 
+
+def prepare_dataset():
+    """自动划分数据集"""
+    # 创建目录结构
+    os.makedirs(f"{CONFIG['data_dir']}/train/images", exist_ok=True)
+    os.makedirs(f"{CONFIG['data_dir']}/train/labels", exist_ok=True)
+    os.makedirs(f"{CONFIG['data_dir']}/val/images", exist_ok=True)
+    os.makedirs(f"{CONFIG['data_dir']}/val/labels", exist_ok=True)
+    os.makedirs(f"{CONFIG['data_dir']}/test/images", exist_ok=True)
+    os.makedirs(f"{CONFIG['data_dir']}/test/labels", exist_ok=True)
+
+    # 获取所有样本
+    all_files = [f for f in os.listdir(f"{CONFIG['data_dir']}/{CONFIG['image_dir']}")
+                 if f.endswith(('.jpg', '.png'))]
+    random.shuffle(all_files)
+
+    # 划分数据集
+    train_val, test = train_test_split(all_files, test_size=CONFIG['split_ratio'][2], random_state=CONFIG['seed'])
+    train, val = train_test_split(train_val, test_size=CONFIG['split_ratio'][1] / (1 - CONFIG['split_ratio'][2]),
+                                  random_state=CONFIG['seed'])
+
+    # 复制文件到对应目录
+    def copy_files(files, subset):
+        for f in files:
+            base = os.path.splitext(f)[0]
+            # 复制图片
+            shutil.copy(
+                f"{CONFIG['data_dir']}/{CONFIG['image_dir']}/{f}",
+                f"{CONFIG['data_dir']}/{subset}/images/{f}"
+            )
+            # 复制标签
+            label_src = f"{CONFIG['data_dir']}/{CONFIG['label_dir']}/{base}.txt"
+            if os.path.exists(label_src):
+                shutil.copy(
+                    label_src,
+                    f"{CONFIG['data_dir']}/{subset}/labels/{base}.txt"
+                )
+
+    copy_files(train, "train")
+    copy_files(val, "val")
+    copy_files(test, "test")
+
+    # 生成data.yaml
+    data_yaml = {
+        "path": os.path.abspath(CONFIG["data_dir"]),
+        "train": "train/images",
+        "val": "val/images",
+        "test": "test/images",
+        "names": {0: "sea-slug"},
+        "kpt_shape": [5, 2],
+        "flip_idx": [0, 1, 2, 3, 4]  # 根据实际关键点对称性调整
+    }
+
+    with open(f"{CONFIG['data_dir']}/data.yaml", "w") as f:
+        yaml.dump(data_yaml, f)
 
 def plot_training_curves(model):
     """ 绘制损失曲线、mAP 曲线等训练指标 """
@@ -150,21 +205,34 @@ def train_model():
         save_period=10,
         exist_ok=True,
         workers=CONFIG["workers"],
-        save_dir="models",
-        fliplr = 0,  # 50% 概率水平翻转
-        flipud = 0,  # 20% 概率垂直翻转
-        degrees = 180 # 允许±10° 旋转
+        save_dir=os.path.abspath("./models"),
+        fliplr=0,  # 50% 概率水平翻转
+        flipud=0,  # 20% 概率垂直翻转
+        degrees=180,  # 允许±180° 旋转
     )
 
-    best_model_path = os.path.join("models", "best.pt")
-    last_model_path = os.path.join("models", "last.pt")
+    # 保存模型
+    best_model_src = os.path.join("models", "weights", "best.pt")
+    last_model_src = os.path.join("models", "weights", "last.pt")
+    best_model_dst = os.path.join("models", "best.pt")
+    last_model_dst = os.path.join("models", "last.pt")
 
-    if os.path.exists(best_model_path):
-        shutil.move(best_model_path, "models/best.pt")
-    if os.path.exists(last_model_path):
-        shutil.move(last_model_path, "models/last.pt")
+    # 如果存在就复制一份到 models 目录根目录
+    if os.path.exists(best_model_src):
+        shutil.copy(best_model_src, best_model_dst)
+        print(f"✅ 已保存最佳模型到: {best_model_dst}")
+    else:
+        print("⚠️ 未找到 best.pt")
+
+    if os.path.exists(last_model_src):
+        shutil.copy(last_model_src, last_model_dst)
+        print(f"✅ 已保存最后模型到: {last_model_dst}")
+    else:
+        print("⚠️ 未找到 last.pt")
 
     return model
+
+
 
 
 def test_model(model):
@@ -279,6 +347,8 @@ if __name__ == "__main__":
     random.seed(CONFIG["seed"])
     np.random.seed(CONFIG["seed"])
 
+    prepare_dataset()
+
     print("🚀 开始训练 YOLOv8 ...")
     model = train_model()
 
@@ -286,7 +356,7 @@ if __name__ == "__main__":
     analyze_results(model)
 
     print("\n🎯 绘制训练曲线...")
-    plot_training_curves(model)
+    # plot_training_curves(model)
 
     print("\n🛠 运行测试集推理...")
     test_model(model)

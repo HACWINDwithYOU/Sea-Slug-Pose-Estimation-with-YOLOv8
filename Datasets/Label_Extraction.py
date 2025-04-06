@@ -7,7 +7,7 @@ import os
 import xml.etree.ElementTree as ET
 from tqdm import tqdm
 
-def convert_cvat_skeleton_to_yolo(xml_path, image_dir, output_dir):
+def convert_cvat_skeleton_to_yolo(xml_path, image_dir, output_dir, prefix):
     """确保关键点按指定顺序存储"""
     tree = ET.parse(xml_path)
     root = tree.getroot()
@@ -45,7 +45,7 @@ def convert_cvat_skeleton_to_yolo(xml_path, image_dir, output_dir):
 
     # 写入YOLO格式
     for frame_id, instances in tqdm(frame_annotations.items(), desc="写入标签"):
-        image_name = f"frame_{frame_id:06d}.jpg"
+        image_name = f"{prefix}_frame_{frame_id:06d}.jpg"
         label_path = os.path.join(output_dir, os.path.splitext(image_name)[0] + ".txt")
 
         with open(label_path, "w") as f:
@@ -64,9 +64,10 @@ def convert_cvat_skeleton_to_yolo(xml_path, image_dir, output_dir):
 
 # 使用示例
 convert_cvat_skeleton_to_yolo(
-    xml_path="annotations.xml",
+    xml_path="annotations/annotations2.xml",
     image_dir="images",
-    output_dir="labels"
+    output_dir="labels",
+    prefix="video2"
 )
 
 import os
