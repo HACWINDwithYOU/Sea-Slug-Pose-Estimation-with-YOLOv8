@@ -6,13 +6,13 @@ import sys
 pygame.init()
 WIDTH, HEIGHT = 800, 1000  # 加高窗口用于绘图
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Particle Navigation Simulator")
+pygame.display.set_caption("Sea Slug Navigation Simulation")
 clock = pygame.time.Clock()
 
 # 场地和仿真参数
 RADIUS = 300
 CENTER = np.array([WIDTH // 2, 400])  # 场地位置上移，留出下方绘图空间
-dt = 0.05
+dt = 0.02
 v = 100
 k_p = 6.0
 k_d = 2.5
