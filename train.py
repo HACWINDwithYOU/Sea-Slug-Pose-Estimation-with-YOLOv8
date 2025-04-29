@@ -209,6 +209,11 @@ def train_model():
         fliplr=0,  # 50% 概率水平翻转
         flipud=0,  # 20% 概率垂直翻转
         degrees=180,  # 允许±180° 旋转
+        hsv_h=0.015,  # 色调增强
+        hsv_s=0.7,  # 饱和度增强
+        hsv_v=0.4,  # 明度增强
+        scale=0.5,  # 缩放
+        shear=2  # 剪切
     )
 
     # 保存模型
@@ -231,9 +236,6 @@ def train_model():
         print("⚠️ 未找到 last.pt")
 
     return model
-
-
-
 
 def test_model(model):
     """ 在测试集上推理，并保存结果 """
